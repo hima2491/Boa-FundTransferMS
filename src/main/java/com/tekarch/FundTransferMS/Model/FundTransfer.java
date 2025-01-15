@@ -1,40 +1,30 @@
 package com.tekarch.FundTransferMS.Model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
+import org.antlr.v4.runtime.misc.NotNull;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "fund_transfers")
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
 public class FundTransfer {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "transfer_id")
     private Long transferId;
-
-    private Integer senderAccountId;
-    private Integer receiverAccountId;
-
-    @Column(nullable = false)
-    private BigDecimal amount;
-
-
-
-
+    @NotNull
+    private Long sender_account_id;
+    @NotNull
+    private  Long receiver_account_id;
+    @NotNull
+    private double amount;
     private String status;
-
-    @Column(nullable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-    private LocalDateTime initiatedAt;
-
-    private LocalDateTime completedAt;
-    private LocalDateTime scheduledDate;
-
-    private String frequency; // For recurring transfers
+    @CreationTimestamp
+    private LocalDateTime initiated_at;
+    @UpdateTimestamp
+    private LocalDateTime completed_at;
 }
+

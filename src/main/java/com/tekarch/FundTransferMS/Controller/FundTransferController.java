@@ -1,86 +1,42 @@
 package com.tekarch.FundTransferMS.Controller;
 import com.tekarch.FundTransferMS.Model.FundTransfer;
-import com.tekarch.FundTransferMS.Model.TransferStatus;
-import com.tekarch.FundTransferMS.Service.Interface.FundTransferService;
+import com.tekarch.FundTransferMS.Services.FundTransferServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
+
+import java.util.Optional;
+
 @RestController
-@RequestMapping("/fund-transfer")
+@RequestMapping ("/transactions")
 public class FundTransferController {
 
     @Autowired
-    private FundTransferService service;
+    private FundTransferServiceImpl transactionService;
 
     @PostMapping
-    public ResponseEntity<FundTransfer> initiateTransaction(@RequestBody FundTransfer transfer) {
-        return ResponseEntity.ok(service.initiateTransaction(transfer));
+    public ResponseEntity<FundTransfer> initiateTransfer(@RequestBody FundTransfer fundTransfer) {
+        FundTransfer initiatedTransfer = transactionService.transferFunds(fundTransfer);
+        return new ResponseEntity<>(initiatedTransfer, HttpStatus.CREATED);
     }
 
-    @GetMapping("/transaction")
-    public ResponseEntity<List<FundTransfer>> getUserTransactions(
-            @RequestParam("userID") Integer userId,
-            @RequestParam(value = "Type", required = false) String type,
-            @RequestParam(value = "min", required = false) BigDecimal minAmount,
-            @RequestParam(value = "max", required = false) BigDecimal maxAmount) {
-        // Call service to get transactions with filters
-        List<FundTransfer> transactions = service.getTransactions(userId, type, minAmount, maxAmount);
-        return ResponseEntity.ok(transactions);
+    @GetMapping
+    public ResponseEntity<List<FundTransfer>> getAllTransfers() {
+        return new ResponseEntity<>(transactionService.getAllTransactions(), HttpStatus.OK);
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<FundTransfer> getTransferById(@PathVariable Long id) {
+        Optional<FundTransfer> transactions = transactionService.getTransactionById(id);
+//        return transactions.isEmpty()
+//                ? ResponseEntity.status(HttpStatus.NOT_FOUND).build()
+//                : new ResponseEntity<>(transactions.get(), HttpStatus.OK);
 
-    @GetMapping("/transaction/{userid}")
-    public ResponseEntity<List<FundTransfer>> getByDate(
-            @PathVariable Integer userid,
-            @RequestParam(required = false) LocalDateTime datefrom,
-            @RequestParam(required = false) LocalDateTime dateto) {
-        return ResponseEntity.ok(service.getTransactionsByAccount(userid));
-    }
-
-    @GetMapping("/transaction/account")
-    public ResponseEntity<List<FundTransfer>> getByAccountId(
-            @RequestParam("accountid") Integer accountId) {
-        return ResponseEntity.ok(service.getTransactionsByAccountId(accountId));
-    }
-
-    @GetMapping("/transaction/status/{userid}")
-    public ResponseEntity<List<FundTransfer>> getTransactionsByStatus(
-            @PathVariable Integer userid,
-            @RequestParam String status) {
-        return ResponseEntity.ok(service.getTransactionsByStatus(userid, status));
-    }
-
-
-
-
-
-    @PostMapping("/schedule")
-    public ResponseEntity<FundTransfer> scheduledTransfer(@RequestBody FundTransfer transfer,
-                                                          @RequestParam String scheduled) {
-        return ResponseEntity.ok(service.setupScheduledTransfer(transfer, LocalDateTime.parse(scheduled)));
-    }
-
-
-    @GetMapping(params = "recurring")
-    public ResponseEntity<FundTransfer> recurringTransferDetails(@RequestParam Long paymentid) {
-        return ResponseEntity.ok(service.getRecurringTransferDetails(paymentid));
-    }
-
-    @GetMapping("/limits/{id}/validate")
-    public ResponseEntity<String> validateTransactionLimit(@PathVariable("id") Integer accountId) {
-        // Call the service to validate transaction limit
-        service.validateTransactionLimit(accountId);
-        return ResponseEntity.ok("Transaction limit validation successful for account: " + accountId);
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> cancelTransfer(@PathVariable Long id) {
-        return ResponseEntity.noContent().build();
+        return transactions.map(value -> new ResponseEntity<>(value, HttpStatus.OK))
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 }
